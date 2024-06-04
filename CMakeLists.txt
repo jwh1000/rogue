@@ -40,6 +40,8 @@ find_package(libtcod CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 
+add_subdirectory(external/flecs)
+
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
@@ -47,6 +49,7 @@ target_link_libraries(
         SDL2::SDL2main
         libtcod::libtcod
         fmt::fmt
+        flecs::flecs_static
 )
 
 # Copy the data directory to the build directory
