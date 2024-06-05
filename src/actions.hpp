@@ -1,4 +1,10 @@
-// action.hpp
+/*
+* actions.hpp
+* created by ironhands
+*
+* Actions taken by the player
+*/
+
 #ifndef ACTION_HPP
 #define ACTION_HPP
 
@@ -12,6 +18,8 @@ public:
     ~EscapeAction() override = default;
 };
 
+// Maybe add a "takes time" bool? Like some actions will cause the
+// turn to progress or something while others wont (like opening inventory)
 class MovementAction : public Action {
 public:
     int dx;

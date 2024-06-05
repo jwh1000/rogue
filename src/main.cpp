@@ -11,17 +11,8 @@
 #include <flecs.h>
 #include "data.hpp"
 #include "actions.hpp"
-#include "InputHandlers.hpp"
-
-struct Position {
-    int x, y;
-};
-
-struct Renderable {
-    char glyph;
-    TCOD_ColorRGB fg;
-    TCOD_ColorRGB bg;
-};
+#include "entity.hpp"
+#include "EventHandlers.hpp"
 
 struct LeftMover {};
 
@@ -58,21 +49,24 @@ int main(int argc, char* argv[]) {
     ecs.component<Position>();
     ecs.component<Renderable>();
 
+    auto playerPrefab = CreatePlayerPrefab(ecs);
+    auto enemyPrefab = CreateEnemyPrefab(ecs);
+
     for (int i = 0; i < 11; i++) {
         ecs.entity()
+            .is_a(enemyPrefab)
             .set<Position>({ i * 7, 20 })
-            .set<Renderable>({ '@', TCOD_red, TCOD_black })
             .add<LeftMover>();
     }
 
     auto player = ecs.entity()
+        .is_a(playerPrefab)
         .set<Position>({ player_x, player_y })
-        .set<Renderable>({ '@', TCOD_white, TCOD_black })
         .add<Player>();
 
     ecs.system<const Position, const Renderable>("Render")
         .each([&](const Position& pos, const Renderable& ren) {
-            tcod::print(console, { pos.x, pos.y }, std::string(1, ren.glyph), ren.fg, ren.bg);
+            tcod::print(console, { pos.x, pos.y }, std::string(1, ren.glyph), ren.fg, TCOD_black);
     });
 
 
