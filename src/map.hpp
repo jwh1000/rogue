@@ -1,6 +1,9 @@
 #ifndef MAP_HPP
 #define MAP_HPP
 
+#include <vector>
+#include <libtcod.hpp>
+#include "procgen.hpp"
 
 enum class TileType {
     Wall,

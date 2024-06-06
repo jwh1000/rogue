@@ -61,7 +61,10 @@ int main(int argc, char* argv[]) {
             .set<Position>({ i * 7, 20 });
     }
 
+    // add systems to world
     engine.initSystems(console);
+
+    // create the map and add it to the world
     ecs.set<Map>({ new_map_rooms_and_corridors() });
 
     while (true) {
