@@ -2,11 +2,11 @@
 #define EVENT_HANDLER_HPP
 
 #include <SDL2/SDL.h>
-//#include "actions.hpp"
+#include "actions.hpp"
 
 class EventHandler {
 public:
-    std::unique_ptr<Action> handle_event(SDL_Event& event) {
+    std::unique_ptr<Action> convert_event(SDL_Event& event) {
         switch (event.type) {
             case SDL_QUIT:
                 return std::make_unique<EscapeAction>();

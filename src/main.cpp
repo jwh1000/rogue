@@ -6,81 +6,29 @@
 * program starts here
 */
 
+#include <flecs.h>
+#include <iostream>
 #include <libtcod.hpp>
 #include <SDL2/SDL.h>
-#include <flecs.h>
-#include <vector>
-#include <iostream>
 
-#include "data.hpp"
 #include "actions.hpp"
+#include "data.hpp"
+#include "engine.hpp"
 #include "EventHandlers.hpp"
 
 // ecs stuffs
-#include "tags.hpp"
 #include "components.hpp"
-#include "prefabs.hpp"
 #include "map.hpp"
-
-class GameState {
-public:
-    flecs::world& ecs;
-
-    GameState(flecs::world& world) : ecs(world) {}
-
-    void tick(tcod::Console& console, tcod::Context& context) {
-        TCOD_console_clear(console.get());
-        auto map = ecs.get<Map>()->map;
-        draw_map(map, console);
-        ecs.progress();
-        context.present(console);
-    }
-};
+#include "prefabs.hpp"
+#include "tags.hpp"
 
 
-void initSystems(flecs::world& ecs, tcod::Console& console) {
+tcod::Context initContext(tcod::Tileset& tileset, tcod::Console& console) {
 
-    // phase 1: perform all actions
-    flecs::entity actionPhase = ecs.entity()
-        .add(flecs::Phase);
-
-    // phase 2: render entities after actions are taken
-    flecs::entity renderPhase = ecs.entity()
-        .add(flecs::Phase)
-        .depends_on(actionPhase);
-        
-    ecs.system<LeftMover, Position>("LeftWalker")
-        .kind(actionPhase)
-        .iter([](flecs::iter& it, LeftMover* lm, Position* pos) {
-        for (auto i : it) {
-            pos[i].x -= 1; // Move the entity left
-            if (pos[i].x < 0) pos[i].x = 79; // Wrap around the screen
-        }
-    });
-
-    ecs.system<const Position, const Renderable>("Render")
-        .kind(renderPhase)
-        .each([&](const Position& pos, const Renderable& ren) {
-        tcod::print(console, { pos.x, pos.y }, std::string(1, ren.glyph), ren.fg, TCOD_black);
-    });
-
-    ecs.progress();
-}
-
-
-int main(int argc, char* argv[]) {
-    flecs::world ecs;
-    GameState gameState(ecs);
-    
-    constexpr int screen_width = 80;
-    constexpr int screen_height = 50;
-
-    int player_x = int(screen_width / 2);
-    int player_y = int(screen_height / 2);
+    int screen_width = console.get_width();
+    int screen_height = console.get_height();
 
     TCOD_ContextParams params = {};
-    params.argc = argc;
-    params.argv = argv;
     params.vsync = true;
     params.renderer_type = TCOD_RENDERER_SDL2;
     params.sdl_window_flags = SDL_WINDOW_RESIZABLE;
@@ -88,55 +36,42 @@ int main(int argc, char* argv[]) {
     params.window_title = "rogue thing";
     params.window_x = screen_width;
     params.window_y = screen_height;
-    
-    auto tileset = tcod::load_tilesheet(get_data_dir() / "Alloy_curses_12x12.png", { 16, 16 }, tcod::CHARMAP_CP437);
-    
     params.tileset = tileset.get();
-
-    auto console = tcod::Console(screen_width, screen_height);
     params.console = console.get();
 
-    auto context = tcod::Context(params);  
+    return tcod::Context(params);
+}
 
-    ecs.component<Position>();
-    ecs.component<Renderable>();
+int main(int argc, char* argv[]) {
+    flecs::world ecs;
+    GameState gameState(ecs);
+    Engine engine(ecs);
+    
+    constexpr int screen_width = 80;
+    constexpr int screen_height = 50;
+    auto console = tcod::Console(screen_width, screen_height);
+    auto tileset = tcod::load_tilesheet(get_data_dir() / "Alloy_curses_12x12.png", { 16, 16 }, tcod::CHARMAP_CP437);
+    auto context = initContext(tileset, console);
 
-    auto playerPrefab = CreatePlayerPrefab(ecs);
+    // for testing
     auto enemyPrefab = CreateEnemyPrefab(ecs);
-
     for (int i = 0; i < 11; i++) {
         ecs.entity()
             .is_a(enemyPrefab)
             .set<Position>({ i * 7, 20 });
     }
 
-    auto player = ecs.entity()
-        .is_a(playerPrefab)
-        .set<Position>({ player_x, player_y })
-        .add<Player>();
+    engine.initSystems(console);
+    ecs.set<Map>({ new_map_rooms_and_corridors() });
 
-    initSystems(ecs, console);
-    EventHandler eventHandler;
-    ecs.set<Map>({ new_map() });
-
-    bool running = true;
-    while (running) {
+    while (true) {
         TCOD_console_clear(console.get());
 
         gameState.tick(console, context);
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            auto action = eventHandler.handle_event(event);
-            if (action) {
-                if (dynamic_cast<EscapeAction*>(action.get())) {
-                    running = false;
-                }
-                else if (auto moveAction = dynamic_cast<MovementAction*>(action.get())) {
-                    auto playerPos = player.get<Position>();
-                    player.set<Position>({ playerPos->x + moveAction->dx, playerPos->y + moveAction->dy });
-                }
-            }
+            engine.handle_events(event);
         }
     }
 

@@ -26,13 +26,13 @@ inline size_t xy_idx(int x, int y) {
 }
 
 
-std::vector<TileType> new_map();
+std::vector<TileType> new_map_test();
+
+
+std::vector<TileType> new_map_rooms_and_corridors();
 
 
 void draw_map(std::vector<TileType> map, tcod::Console& console);
-
-
-
 
 
 #endif

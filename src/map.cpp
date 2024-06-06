@@ -7,7 +7,7 @@
 #include "map.hpp"
 
 
-std::vector<TileType> new_map() {
+std::vector<TileType> new_map_test() {
     std::vector<TileType> map((80 * 50), TileType::Floor);
 
     for (int x = 0; x < 80; x++) {
@@ -33,6 +33,12 @@ std::vector<TileType> new_map() {
     }
 
     return map;
+}
+
+
+std::vector<TileType> new_map_rooms_and_corridors() {
+    std::vector<TileType> map((80 * 50), TileType::Wall);
+    return new_map_test();
 }
 
 
