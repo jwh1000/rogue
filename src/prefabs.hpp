@@ -14,7 +14,7 @@
 inline flecs::entity CreatePlayerPrefab(flecs::world& ecs) {
     return ecs.prefab("PlayerPrefab")
         .set<Position>({ 0, 0 })
-        .set<Renderable>({ '@', TCOD_white })
+        .set<Renderable>({ '@', TCOD_brass })
         .add<Mover>();
 }
 
