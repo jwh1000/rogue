@@ -10,8 +10,6 @@
 
 struct LeftMover {};
 
-struct Mover {};
-
 struct Player {};
 
 struct Item {};

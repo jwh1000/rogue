@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 #include <flecs.h>
 #include <vector>
+#include <iostream>
 
 #include "data.hpp"
 #include "actions.hpp"
@@ -19,81 +20,7 @@
 #include "tags.hpp"
 #include "components.hpp"
 #include "prefabs.hpp"
-
-
-enum class TileType {
-    Wall,
-    Floor
-};
-
-struct Map {
-    std::vector<TileType> map;
-};
-
-
-/**
-* Gets an index from a vector (1 dimensional) for a tile in the map
-* Each row is offset by 80, hence the *80
-* 
-* @param x 
-* @param y
-* @return size_t value for the index in the map vector
-*/
-size_t xy_idx(int x, int y) {
-    return static_cast<size_t>(y) * 80 + static_cast<size_t>(x);
-}
-
-
-std::vector<TileType> new_map() {
-    std::vector<TileType> map((80 * 50), TileType::Floor);
-
-    for (int x = 0; x < 80; x++) {
-        map.at(xy_idx(x, 0)) = TileType::Wall;
-        map.at(xy_idx(x, 49)) = TileType::Wall;
-    }
-    for (int y = 0; y < 50; y++) {
-        map.at(xy_idx(0, y)) = TileType::Wall;
-        map.at(xy_idx(79, y)) = TileType::Wall;
-    }
-
-    TCODRandom* rng = TCODRandom::getInstance();
-
-    int x;
-    int y;
-    for (int i = 0; i < 400; i++) {
-        x = rng->getInt(1, 79);
-        y = rng->getInt(1, 49);
-        size_t idx = xy_idx(x, y);
-        if (idx != xy_idx(40, 25)) {
-            map.at(idx) = TileType::Wall;
-        }
-    }
-
-    return map;
-}
-
-
-void draw_map(std::vector<TileType> map, tcod::Console& console) {
-    int x = 0;
-    int y = 0;
-    for (auto tile : map) {
-        switch (tile) {
-            case TileType::Floor :
-                tcod::print(console, { x, y }, std::string(1,'.'), TCOD_darker_gray, TCOD_black);
-                break;
-            case TileType::Wall :
-                tcod::print(console, { x, y }, std::string(1, '#'), TCOD_white, TCOD_black);
-                break;
-        }
-
-        x += 1;
-        if (x > 79) {
-            x = 0;
-            y += 1;
-        }
-    }
-}
-
+#include "map.hpp"
 
 class GameState {
 public:
@@ -111,8 +38,19 @@ public:
 };
 
 
-void init_systems(flecs::world& ecs, tcod::Console& console) {
+void initSystems(flecs::world& ecs, tcod::Console& console) {
+
+    // phase 1: perform all actions
+    flecs::entity actionPhase = ecs.entity()
+        .add(flecs::Phase);
+
+    // phase 2: render entities after actions are taken
+    flecs::entity renderPhase = ecs.entity()
+        .add(flecs::Phase)
+        .depends_on(actionPhase);
+        
     ecs.system<LeftMover, Position>("LeftWalker")
+        .kind(actionPhase)
         .iter([](flecs::iter& it, LeftMover* lm, Position* pos) {
         for (auto i : it) {
             pos[i].x -= 1; // Move the entity left
@@ -121,9 +59,12 @@ void init_systems(flecs::world& ecs, tcod::Console& console) {
     });
 
     ecs.system<const Position, const Renderable>("Render")
+        .kind(renderPhase)
         .each([&](const Position& pos, const Renderable& ren) {
         tcod::print(console, { pos.x, pos.y }, std::string(1, ren.glyph), ren.fg, TCOD_black);
     });
+
+    ecs.progress();
 }
 
 
@@ -174,7 +115,7 @@ int main(int argc, char* argv[]) {
         .set<Position>({ player_x, player_y })
         .add<Player>();
 
-    init_systems(ecs, console);
+    initSystems(ecs, console);
     EventHandler eventHandler;
     ecs.set<Map>({ new_map() });
 
