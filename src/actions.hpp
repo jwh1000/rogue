@@ -8,6 +8,8 @@
 #ifndef ACTION_HPP
 #define ACTION_HPP
 
+#include "components.hpp"
+
 class Action {
 public:
     virtual ~Action() = default;
