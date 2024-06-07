@@ -30,7 +30,7 @@ public:
 
     void initSystems(tcod::Console& console);
 
-    void handle_events(SDL_Event event);
+    void handleEvents(SDL_Event event);
 
 private:
     EventHandler eventHandler;

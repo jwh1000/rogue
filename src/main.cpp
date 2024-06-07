@@ -45,27 +45,23 @@ tcod::Context initContext(tcod::Tileset& tileset, tcod::Console& console) {
 int main(int argc, char* argv[]) {
     flecs::world ecs;
     GameState gameState(ecs);
-    Engine engine(ecs);
     
     constexpr int screen_width = 80;
     constexpr int screen_height = 50;
     auto console = tcod::Console(screen_width, screen_height);
     auto tileset = tcod::load_tilesheet(get_data_dir() / "Alloy_curses_12x12.png", { 16, 16 }, tcod::CHARMAP_CP437);
     auto context = initContext(tileset, console);
-
-    // for testing
-    auto enemyPrefab = CreateEnemyPrefab(ecs);
-    for (int i = 0; i < 11; i++) {
-        ecs.entity()
-            .is_a(enemyPrefab)
-            .set<Position>({ i * 7, 20 });
-    }
-
-    // add systems to world
+    
+    // TODO: move this guy to the engine
+    auto map_entity = new_map_rooms_and_corridors(ecs);
+    Engine engine(ecs);
     engine.initSystems(console);
 
-    // create the map and add it to the world
-    ecs.set<Map>({ new_map_rooms_and_corridors() });
+    auto rooms = map_entity.get<Rooms>();
+    Rect starting_room = rooms->rooms_vector.front();
+
+    auto player = ecs.lookup("Player");
+    player.set<Position>({ starting_room.center().first, starting_room.center().second});
 
     while (true) {
         TCOD_console_clear(console.get());
@@ -74,7 +70,7 @@ int main(int argc, char* argv[]) {
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            engine.handle_events(event);
+            engine.handleEvents(event);
         }
     }
 

@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <libtcod.hpp>
+#include <algorithm>
+#include <flecs.h>
+
 #include "procgen.hpp"
 
 enum class TileType {
@@ -11,8 +14,12 @@ enum class TileType {
 };
 
 
-struct Map {
-    std::vector<TileType> map;
+struct MapTiles {
+    std::vector<TileType> tileType_vector;
+};
+
+struct Rooms {
+    std::vector<Rect> rooms_vector;
 };
 
 
@@ -32,7 +39,7 @@ inline size_t xy_idx(int x, int y) {
 std::vector<TileType> new_map_test();
 
 
-std::vector<TileType> new_map_rooms_and_corridors();
+flecs::entity new_map_rooms_and_corridors(flecs::world& ecs);
 
 
 void draw_map(std::vector<TileType> map, tcod::Console& console);

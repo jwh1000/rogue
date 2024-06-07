@@ -7,8 +7,11 @@ GameState::GameState(flecs::world& world) : ecs(world) {}
 
 void GameState::tick(tcod::Console& console, tcod::Context& context) {
     TCOD_console_clear(console.get());
-    auto map = ecs.get<Map>()->map;
-    draw_map(map, console);
+
+    auto map_entity = ecs.lookup("Map");
+    auto map_tiles = map_entity.get<MapTiles>()->tileType_vector;
+
+    draw_map(map_tiles, console);
     ecs.progress();
     context.present(console);
 }
@@ -17,7 +20,7 @@ Engine::Engine(flecs::world& world) : ecs(world) {
     auto playerPrefab = CreatePlayerPrefab(ecs);
     player = ecs.entity("Player")
         .is_a(playerPrefab)
-        .set<Position>({ 40, 25 })
+        .set<Position>({ 0, 0 })
         .add<Player>();
 }
 
@@ -49,8 +52,8 @@ void Engine::initSystems(tcod::Console& console) {
     ecs.progress();
 }
 
-void Engine::handle_events(SDL_Event event) {
-    auto action = eventHandler.convert_event(event);
+void Engine::handleEvents(SDL_Event event) {
+    auto action = eventHandler.convertEvent(event);
     if (action) {
         if (dynamic_cast<EscapeAction*>(action.get())) {
             exit(0);

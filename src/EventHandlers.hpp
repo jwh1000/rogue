@@ -6,19 +6,19 @@
 
 class EventHandler {
 public:
-    std::unique_ptr<Action> convert_event(SDL_Event& event) {
+    std::unique_ptr<Action> convertEvent(SDL_Event& event) {
         switch (event.type) {
             case SDL_QUIT:
                 return std::make_unique<EscapeAction>();
             case SDL_KEYDOWN:
-                return event_keydown(event.key);
+                return eventKeydown(event.key);
             default:
                 return nullptr;
         }
     }
 
 private:
-    std::unique_ptr<Action> event_keydown(SDL_KeyboardEvent& keyEvent) {
+    std::unique_ptr<Action> eventKeydown(SDL_KeyboardEvent& keyEvent) {
         switch (keyEvent.keysym.sym) {
             case SDLK_UP:
             case SDLK_k:
