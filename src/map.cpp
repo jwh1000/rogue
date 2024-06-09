@@ -42,6 +42,44 @@ void apply_room_to_map(Rect& room, std::vector<TileType>& map) {
     }
 }
 
+void tunnel_rooms(std::pair<int, int> start, std::pair<int, int> end, std::vector<TileType>& map) {
+    int x1 = start.first; 
+    int y1 = start.second;
+    int x2 = end.first;
+    int y2 = end.second; 
+
+    TCODRandom* rng = TCODRandom::getInstance();
+
+    int corner_x;
+    int corner_y;
+    if (rng->getFloat(0, 1) < 0.5f) {
+        corner_x = x2;  
+        corner_y = y1; 
+    }
+    else {
+        corner_x = x1; 
+        corner_y = y2; 
+    } 
+
+    std::vector<std::tuple<int, int>> tunnel;
+    TCOD_bresenham_data_t bresenham_data;
+
+    TCOD_line_init_mt(x1, y1, corner_x, corner_y, &bresenham_data);
+    int x = x1, y = y1;
+    do {
+        size_t idx = xy_idx(x, y);
+        map.at(idx) = TileType::Floor;
+    } while (!TCOD_line_step_mt(&x, &y, &bresenham_data));
+
+    TCOD_line_init_mt(corner_x, corner_y, x2, y2, &bresenham_data);
+    x = corner_x;
+    y = corner_y;
+    do {
+        size_t idx = xy_idx(x, y);
+        map.at(idx) = TileType::Floor;
+    } while (!TCOD_line_step_mt(&x, &y, &bresenham_data));
+}
+
 void apply_horizontal_tunnel(std::vector<TileType>& map, int x1, int x2, int y) {
     for (int x = std::min(x1, x2); x <= std::max(x1, x2); x++) {
         size_t idx = xy_idx(x, y);
@@ -87,14 +125,7 @@ flecs::entity new_map_rooms_and_corridors(flecs::world& ecs) {
                 std::pair<int, int> new_center = new_room.center();
                 std::pair<int, int> previous_center = rooms.back().center();
 
-                if (rng->getInt(0, 2) == 1) {
-                    apply_horizontal_tunnel(map, previous_center.first, new_center.first, previous_center.second);
-                    apply_vertical_tunnel(map, previous_center.second, new_center.second, new_center.first);
-                }
-                else {
-                    apply_vertical_tunnel(map, previous_center.second, new_center.second, previous_center.first);
-                    apply_horizontal_tunnel(map, previous_center.first, new_center.first, new_center.second);
-                }
+                tunnel_rooms(previous_center, new_center, map);
             }
             rooms.push_back(new_room);
         }
